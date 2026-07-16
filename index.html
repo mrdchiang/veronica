@@ -2,106 +2,137 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Veronica — AI Desktop Buddy</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Veronica — AI Buddy</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
-  body {
+  html, body {
     font-family: 'Inter', sans-serif;
     background: #0a0a0f;
     overflow: hidden;
-    width: 100vw; height: 100vh;
+    width: 100%; height: 100%;
+    position: fixed;
     user-select: none;
+    -webkit-user-select: none;
     color: #fff;
   }
 
   #canvas-container {
     position: fixed; top: 0; left: 0;
-    width: 100vw; height: 100vh;
+    width: 100%; height: 100%;
     z-index: 0;
   }
 
   #particle-canvas {
     position: fixed; top: 0; left: 0;
-    width: 100vw; height: 100vh;
-    z-index: 0;
-    pointer-events: none;
+    width: 100%; height: 100%;
+    z-index: 0; pointer-events: none;
   }
 
-  /* ─── Chat ─── */
+  /* ─── Chat Bubble Button ─── */
+  #chat-bubble {
+    position: fixed;
+    bottom: 28px; right: 20px;
+    z-index: 15;
+    width: 60px; height: 60px;
+    border-radius: 50%;
+    background: rgba(139, 92, 246, 0.25);
+    border: 1px solid rgba(139, 92, 246, 0.2);
+    display: flex;
+    align-items: center; justify-content: center;
+    font-size: 24px;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    -webkit-tap-highlight-color: transparent;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  #chat-bubble:active { transform: scale(0.9); }
+  #chat-bubble .badge {
+    position: absolute;
+    top: -2px; right: -2px;
+    width: 14px; height: 14px;
+    background: #4ade80;
+    border-radius: 50%;
+    border: 2px solid #0a0a0f;
+    animation: pulse-dot 2s infinite;
+  }
+
+  /* ─── Chat Panel (Full Screen on Mobile) ─── */
   #chat-panel {
     position: fixed;
-    bottom: 16px; right: 16px;
-    width: 340px;
-    max-height: 480px;
-    background: rgba(15, 15, 25, 0.88);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-    border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 16px;
-    z-index: 10;
+    bottom: 0; left: 0; right: 0;
+    z-index: 20;
+    background: rgba(10, 10, 15, 0.92);
+    backdrop-filter: blur(28px);
+    -webkit-backdrop-filter: blur(28px);
+    border-top: 1px solid rgba(255,255,255,0.06);
     display: flex; flex-direction: column;
-    overflow: hidden;
-    box-shadow: 0 8px 48px rgba(0,0,0,0.6);
-    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s;
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    max-height: 75vh;
+    border-radius: 20px 20px 0 0;
+    transform: translateY(100%);
+    box-shadow: 0 -8px 48px rgba(0,0,0,0.6);
   }
-  #chat-panel.minimized {
-    transform: translateY(calc(100% - 56px));
-    opacity: 0.85;
-  }
-  #chat-panel.minimized #chat-messages,
-  #chat-panel.minimized #chat-input-area { display: none; }
+  #chat-panel.open { transform: translateY(0); }
 
   #chat-header {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 12px 16px; cursor: pointer;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
+    padding: 16px 20px 8px;
+    cursor: pointer;
     flex-shrink: 0;
+    -webkit-tap-highlight-color: transparent;
   }
-  #chat-header-left { display: flex; align-items: center; gap: 8px; }
+  #chat-header-left { display: flex; align-items: center; gap: 10px; }
   #status-dot {
-    width: 7px; height: 7px; border-radius: 50%;
+    width: 8px; height: 8px; border-radius: 50%;
     background: #4ade80;
     animation: pulse-dot 2s infinite;
   }
-  @keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-  #chat-header h3 { font-size: 13px; font-weight: 600; letter-spacing: 0.3px; }
-  #chat-header-right { display: flex; gap: 6px; }
+  @keyframes pulse-dot { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+  #chat-header h3 { font-size: 16px; font-weight: 600; }
   .header-btn {
-    background: none; border: none;
-    color: rgba(255,255,255,0.3); cursor: pointer;
-    font-size: 14px; padding: 1px 5px; border-radius: 4px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.06);
+    color: rgba(255,255,255,0.4);
+    cursor: pointer;
+    font-size: 16px;
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
     transition: all 0.2s;
+    -webkit-tap-highlight-color: transparent;
   }
-  .header-btn:hover { color: #fff; background: rgba(255,255,255,0.08); }
+  .header-btn:active { background: rgba(255,255,255,0.12); }
 
   #chat-messages {
     flex: 1; overflow-y: auto;
-    padding: 12px 16px;
+    padding: 8px 20px;
     display: flex; flex-direction: column; gap: 8px;
-    min-height: 160px; max-height: 300px;
+    min-height: 100px; max-height: 50vh;
     scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
   }
-  #chat-messages::-webkit-scrollbar { width: 3px; }
-  #chat-messages::-webkit-scrollbar-track { background: transparent; }
+  #chat-messages::-webkit-scrollbar { width: 2px; }
   #chat-messages::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
 
   .msg {
-    max-width: 88%;
-    padding: 8px 12px;
-    border-radius: 12px;
-    font-size: 12.5px;
+    max-width: 85%;
+    padding: 10px 14px;
+    border-radius: 14px;
+    font-size: 14px;
     line-height: 1.5;
-    animation: msg-fade 0.3s ease;
+    animation: msg-fade 0.25s ease;
   }
   @keyframes msg-fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
   .msg.user {
     align-self: flex-end;
     background: rgba(139, 92, 246, 0.25);
-    border: 1px solid rgba(139, 92, 246, 0.15);
+    border: 1px solid rgba(139, 92, 246, 0.12);
     color: #ddd0ff;
   }
   .msg.veronica {
@@ -111,14 +142,14 @@
     color: #e0d8ee;
   }
   .msg .name-tag {
-    font-size: 9px; font-weight: 600;
+    font-size: 10px; font-weight: 600;
     color: rgba(255,255,255,0.3);
     margin-bottom: 3px;
-    text-transform: uppercase; letter-spacing: 0.8px;
+    text-transform: uppercase; letter-spacing: 0.5px;
   }
   .msg.typing .dots { display: inline-flex; gap: 3px; }
   .msg.typing .dots span {
-    width: 5px; height: 5px;
+    width: 6px; height: 6px;
     background: rgba(255,255,255,0.35);
     border-radius: 50%;
     animation: bounce 1.4s infinite;
@@ -128,207 +159,211 @@
   @keyframes bounce { 0%,80%,100% { transform: translateY(0); } 40% { transform: translateY(-5px); } }
 
   .welcome-msg {
-    text-align: center; color: rgba(255,255,255,0.2);
-    font-size: 11px; padding: 16px 0;
+    text-align: center; color: rgba(255,255,255,0.15);
+    font-size: 12px; padding: 20px 0;
   }
 
   #chat-input-area {
-    display: flex; gap: 6px;
-    padding: 10px 16px 12px;
-    border-top: 1px solid rgba(255,255,255,0.05);
+    display: flex; gap: 8px;
+    padding: 8px 20px 24px;
+    border-top: 1px solid rgba(255,255,255,0.04);
     flex-shrink: 0;
   }
   #chat-input {
     flex: 1;
-    background: rgba(255,255,255,0.05);
+    background: rgba(255,255,255,0.06);
     border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 10px;
-    padding: 8px 12px;
+    border-radius: 12px;
+    padding: 12px 16px;
     color: #fff;
-    font-family: inherit; font-size: 12.5px;
+    font-family: inherit; font-size: 15px;
     outline: none;
     transition: border-color 0.2s;
+    -webkit-appearance: none;
   }
   #chat-input:focus { border-color: rgba(139, 92, 246, 0.3); }
-  #chat-input::placeholder { color: rgba(255,255,255,0.15); }
+  #chat-input::placeholder { color: rgba(255,255,255,0.2); }
   #send-btn {
     background: rgba(139, 92, 246, 0.25);
     border: 1px solid rgba(139, 92, 246, 0.15);
     color: #b0a0e0;
-    border-radius: 10px;
-    width: 38px; cursor: pointer; font-size: 15px;
+    border-radius: 12px;
+    width: 48px; cursor: pointer; font-size: 18px;
     transition: all 0.2s;
     display: flex; align-items: center; justify-content: center;
+    -webkit-tap-highlight-color: transparent;
   }
-  #send-btn:hover { background: rgba(139, 92, 246, 0.4); }
+  #send-btn:active { background: rgba(139, 92, 246, 0.4); }
+
+  /* ─── Settings Overlay ─── */
+  #settings-overlay {
+    position: fixed; inset: 0; z-index: 30;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(8px);
+    transition: opacity 0.3s;
+    padding: 20px;
+  }
+  #settings-overlay.hidden { opacity: 0; pointer-events: none; }
+  #settings-box {
+    background: rgba(20,20,32,0.96);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 24px;
+    padding: 32px 24px;
+    max-width: 360px; width: 100%;
+    text-align: center;
+  }
+  #settings-box h2 { font-size: 20px; font-weight: 600; margin-bottom: 4px; }
+  #settings-box p { font-size: 13px; color: rgba(255,255,255,0.4); margin-bottom: 20px; line-height: 1.6; }
+  #settings-box input {
+    width: 100%;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 12px 16px;
+    color: #fff;
+    font-family: inherit; font-size: 14px;
+    outline: none;
+    margin-bottom: 8px;
+    -webkit-appearance: none;
+  }
+  #settings-box input:focus { border-color: rgba(139, 92, 246, 0.3); }
+  #settings-box .hint { font-size: 11px; color: rgba(255,255,255,0.25); margin-bottom: 16px; }
+  #settings-box .hint a { color: rgba(139, 92, 246, 0.6); }
+  #settings-save {
+    background: rgba(139, 92, 246, 0.3);
+    border: 1px solid rgba(139, 92, 246, 0.2);
+    color: #c4b5fd;
+    border-radius: 12px;
+    padding: 12px 32px;
+    cursor: pointer;
+    font-size: 14px; font-family: inherit; font-weight: 500;
+    transition: all 0.2s;
+    width: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #settings-save:active { background: rgba(139, 92, 246, 0.5); }
+  #settings-skip {
+    background: none; border: none;
+    color: rgba(255,255,255,0.3);
+    cursor: pointer;
+    font-size: 13px;
+    margin-top: 14px;
+    font-family: inherit;
+  }
+  #settings-skip:active { color: rgba(255,255,255,0.6); }
+
+  .settings-btn {
+    position: fixed; top: 12px; right: 12px;
+    z-index: 12;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.06);
+    color: rgba(255,255,255,0.3);
+    border-radius: 10px;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: 16px;
+    font-family: inherit;
+    -webkit-tap-highlight-color: transparent;
+    backdrop-filter: blur(8px);
+  }
+  .settings-btn:active { background: rgba(255,255,255,0.1); color: #fff; }
+
+  /* ─── Loading ─── */
+  #loading {
+    position: fixed; inset: 0; z-index: 50;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: #0a0a0f;
+    transition: opacity 0.6s;
+  }
+  #loading.hidden { opacity: 0; pointer-events: none; }
+  #loading .spinner {
+    width: 40px; height: 40px;
+    border: 2px solid rgba(255,255,255,0.04);
+    border-top: 2px solid rgba(139,92,246,0.4);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #loading p { margin-top: 14px; font-size: 13px; color: rgba(255,255,255,0.2); }
 
   /* ─── Kowalski ─── */
   #kowalski-popup {
     position: fixed;
-    bottom: 16px; left: 16px;
-    z-index: 20;
-    display: flex; align-items: flex-end; gap: 10px;
+    bottom: 100px; left: 50%;
+    transform: translateX(-50%);
+    z-index: 12;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
     cursor: pointer;
-    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s;
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    -webkit-tap-highlight-color: transparent;
   }
   #kowalski-popup.hidden {
-    transform: translateY(120px);
     opacity: 0;
+    transform: translateX(-50%) translateY(30px);
     pointer-events: none;
   }
-  #kowalski-thumb {
-    width: 52px; height: 52px;
-    background: rgba(15,15,25,0.8);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 14px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 28px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-    flex-shrink: 0;
-    transition: transform 0.3s;
-  }
-  #kowalski-popup:hover #kowalski-thumb { transform: scale(1.05); }
   #kowalski-bubble {
     background: rgba(15,15,25,0.88);
     backdrop-filter: blur(12px);
     border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 14px;
-    padding: 10px 14px;
-    max-width: 200px;
-    font-size: 12px;
+    border-radius: 16px;
+    padding: 12px 16px;
+    max-width: 260px;
+    font-size: 13px;
     line-height: 1.5;
     color: #c8c0d8;
     position: relative;
     animation: bubble-in 0.35s ease;
+    text-align: center;
   }
   @keyframes bubble-in {
     from { opacity: 0; transform: scale(0.92) translateY(6px); }
     to { opacity: 1; transform: scale(1) translateY(0); }
   }
   #kowalski-bubble .label {
-    font-size: 9px; font-weight: 700;
+    font-size: 10px; font-weight: 700;
     color: rgba(255,200,100,0.65);
-    text-transform: uppercase; letter-spacing: 0.8px;
-    margin-bottom: 3px;
+    text-transform: uppercase; letter-spacing: 1px;
+    margin-bottom: 4px;
   }
-  #kowalski-close {
-    position: absolute; top: 5px; right: 7px;
-    background: none; border: none;
-    color: rgba(255,255,255,0.15); cursor: pointer;
-    font-size: 10px; padding: 2px;
+  #kowalski-thumb {
+    font-size: 40px;
+    filter: drop-shadow(0 4px 12px rgba(0,0,0,0.4));
+    transition: transform 0.3s;
   }
-  #kowalski-close:hover { color: rgba(255,255,255,0.5); }
+  #kowalski-popup:active #kowalski-thumb { transform: scale(0.9); }
 
-  /* ─── Loading ─── */
-  #loading {
-    position: fixed; inset: 0; z-index: 200;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    background: #0a0a0f;
-    transition: opacity 0.6s;
-  }
-  #loading.hidden { opacity: 0; pointer-events: none; }
-  #loading .spinner {
-    width: 36px; height: 36px;
-    border: 2px solid rgba(255,255,255,0.05);
-    border-top: 2px solid rgba(139,92,246,0.5);
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  #loading p { margin-top: 12px; font-size: 12px; color: rgba(255,255,255,0.25); }
+  .kowalski-popup.notification #kowalski-thumb { filter: drop-shadow(0 4px 12px rgba(251,191,36,0.3)); }
+  .kowalski-popup.welcome #kowalski-thumb { filter: drop-shadow(0 4px 12px rgba(96,165,250,0.3)); }
+  .kowalski-popup.tip #kowalski-thumb { filter: drop-shadow(0 4px 12px rgba(167,139,250,0.3)); }
 
-  /* ─── Settings / API Key ─── */
-  #settings-overlay {
-    position: fixed; inset: 0; z-index: 300;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(0,0,0,0.6);
-    backdrop-filter: blur(8px);
-    transition: opacity 0.3s;
+  /* ─── Desktop overrides ─── */
+  @media (min-width: 768px) {
+    #chat-panel {
+      bottom: 24px; left: auto; right: 24px;
+      width: 360px;
+      max-height: 520px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.06);
+      transform: translateY(calc(100% - 56px));
+      box-shadow: 0 8px 48px rgba(0,0,0,0.6);
+    }
+    #chat-panel.open { transform: translateY(0); }
+    #chat-header { padding: 14px 18px; }
+    #chat-messages { max-height: 300px; }
+    #chat-input-area { padding: 8px 18px 16px; }
+    #chat-bubble { display: none; }
+    #chat-panel.minimized { transform: translateY(calc(100% - 56px)); }
+    #chat-panel.minimized #chat-messages,
+    #chat-panel.minimized #chat-input-area { display: none; }
+    #kowalski-popup { bottom: 24px; left: 24px; transform: none; flex-direction: row; }
+    #kowalski-popup.hidden { opacity: 0; transform: translateY(120px); pointer-events: none; }
+    #kowalski-popup:active #kowalski-thumb { transform: none; }
+    #kowalski-popup:hover #kowalski-thumb { transform: scale(1.05); }
   }
-  #settings-overlay.hidden { opacity: 0; pointer-events: none; }
-  #settings-box {
-    background: rgba(20,20,32,0.95);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 20px;
-    padding: 28px 32px;
-    max-width: 400px;
-    width: 90%;
-    text-align: center;
-  }
-  #settings-box h2 { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
-  #settings-box p { font-size: 12px; color: rgba(255,255,255,0.4); margin-bottom: 20px; line-height: 1.5; }
-  #settings-box input {
-    width: 100%;
-    background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 10px;
-    padding: 10px 14px;
-    color: #fff;
-    font-family: inherit;
-    font-size: 13px;
-    outline: none;
-    margin-bottom: 12px;
-  }
-  #settings-box input:focus { border-color: rgba(139, 92, 246, 0.3); }
-  #settings-box .hint {
-    font-size: 11px;
-    color: rgba(255,255,255,0.25);
-    margin-bottom: 16px;
-  }
-  #settings-box .hint a { color: rgba(139, 92, 246, 0.6); }
-  #settings-save {
-    background: rgba(139, 92, 246, 0.3);
-    border: 1px solid rgba(139, 92, 246, 0.2);
-    color: #c4b5fd;
-    border-radius: 10px;
-    padding: 10px 32px;
-    cursor: pointer;
-    font-size: 13px;
-    font-family: inherit;
-    font-weight: 500;
-    transition: all 0.2s;
-  }
-  #settings-save:hover { background: rgba(139, 92, 246, 0.5); }
-  #settings-skip {
-    background: none;
-    border: none;
-    color: rgba(255,255,255,0.3);
-    cursor: pointer;
-    font-size: 12px;
-    margin-top: 12px;
-    font-family: inherit;
-  }
-  #settings-skip:hover { color: rgba(255,255,255,0.6); }
-  .settings-btn {
-    position: fixed; top: 10px; right: 10px;
-    z-index: 50;
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.06);
-    color: rgba(255,255,255,0.3);
-    border-radius: 8px;
-    padding: 4px 10px;
-    cursor: pointer;
-    font-size: 14px;
-    font-family: inherit;
-    transition: all 0.2s;
-  }
-  .settings-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
 
-  .kowalski-popup.notification #kowalski-thumb { color: #fbbf24; }
-  .kowalski-popup.welcome #kowalski-thumb { color: #60a5fa; }
-  .kowalski-popup.tip #kowalski-thumb { color: #a78bfa; }
-
-  /* Mobile adjustments */
-  @media (max-width: 500px) {
-    #chat-panel { width: calc(100vw - 32px); max-height: 60vh; right: 16px; bottom: 12px; }
-    #kowalski-popup { bottom: 10px; left: 10px; }
-    #kowalski-thumb { width: 40px; height: 40px; font-size: 22px; }
-    #kowalski-bubble { max-width: 160px; font-size: 11px; }
-  }
+  .hidden { display: none; }
 </style>
 </head>
 <body>
@@ -346,40 +381,41 @@
 <div id="settings-overlay" class="hidden">
   <div id="settings-box">
     <h2>✦ Veronica</h2>
-    <p>Enter your <strong>DeepSeek API key</strong> to enable AI chat.<br>Without it, Veronica will use local responses.</p>
+    <p>Enter your DeepSeek API key to enable AI chat.<br>Without it, Veronica uses local responses.</p>
     <input id="api-key-input" type="password" placeholder="sk-..." autocomplete="off">
     <div class="hint">Get a free key at <a href="https://platform.deepseek.com/api_keys" target="_blank" rel="noopener">platform.deepseek.com</a></div>
     <button id="settings-save" onclick="saveApiKey()">Save &amp; Continue</button>
     <br>
-    <button id="settings-skip" onclick="skipApiKey()">Skip — use local responses</button>
+    <button id="settings-skip" onclick="skipApiKey()">Skip — local only</button>
   </div>
 </div>
 
 <div id="kowalski-popup" class="hidden welcome">
   <div id="kowalski-bubble">
-    <button id="kowalski-close" onclick="dismissKowalski()">✕</button>
     <div class="label">✦ Sir Kowalski</div>
-    <div id="kowalski-text">Hey! Veronica's here. Tap the chat to talk!</div>
+    <div id="kowalski-text">Tap the purple button to talk to Veronica!</div>
   </div>
   <div id="kowalski-thumb">🧸</div>
 </div>
 
-<div id="chat-panel" class="minimized">
+<button id="chat-bubble" onclick="toggleChat()" style="display:none;">
+  <span class="badge"></span>
+  💬
+</button>
+
+<div id="chat-panel">
   <div id="chat-header" onclick="toggleChat()">
     <div id="chat-header-left">
       <div id="status-dot"></div>
       <h3>Veronica</h3>
     </div>
-    <div id="chat-header-right">
-      <button class="header-btn" onclick="event.stopPropagation(); clearChat()" title="Clear">🗑</button>
-      <button class="header-btn" onclick="event.stopPropagation(); toggleChat()">−</button>
-    </div>
+    <button class="header-btn" onclick="event.stopPropagation(); clearChat()">🗑</button>
   </div>
   <div id="chat-messages">
-    <div class="welcome-msg">She's watching.</div>
+    <div class="welcome-msg">She's watching...</div>
   </div>
   <div id="chat-input-area">
-    <input id="chat-input" type="text" placeholder="Talk to Veronica..." maxlength="500">
+    <input id="chat-input" type="text" placeholder="Talk to Veronica..." maxlength="500" enterkeyhint="send">
     <button id="send-btn" onclick="sendMessage()">➤</button>
   </div>
 </div>
@@ -398,12 +434,20 @@ import * as THREE from 'three';
 import { MMDLoader } from 'three/addons/loaders/MMDLoader.js';
 
 const container = document.getElementById('canvas-container');
+const isMobile = window.innerWidth < 768;
+
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0a0a0f);
 
-const camera = new THREE.PerspectiveCamera(25, container.clientWidth / container.clientHeight, 1, 100);
-camera.position.set(0, 8, 14);
-camera.lookAt(0, 4.5, 0);
+// Camera: tighter on mobile, wider on desktop
+const camera = new THREE.PerspectiveCamera(isMobile ? 30 : 25, container.clientWidth / container.clientHeight, 1, 100);
+if (isMobile) {
+  camera.position.set(0, 7, 12);
+  camera.lookAt(0, 4, 0);
+} else {
+  camera.position.set(0, 8, 14);
+  camera.lookAt(0, 4.5, 0);
+}
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 renderer.setSize(container.clientWidth, container.clientHeight);
@@ -414,20 +458,18 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.2;
 container.appendChild(renderer.domElement);
 
+// Lights
 const ambient = new THREE.AmbientLight(0x444466, 0.6);
 scene.add(ambient);
-
 const keyLight = new THREE.DirectionalLight(0xffeecc, 1.8);
 keyLight.position.set(5, 10, 8);
 keyLight.castShadow = true;
-keyLight.shadow.mapSize.width = 1024;
-keyLight.shadow.mapSize.height = 1024;
+keyLight.shadow.mapSize.width = isMobile ? 512 : 1024;
+keyLight.shadow.mapSize.height = isMobile ? 512 : 1024;
 scene.add(keyLight);
-
 const fillLight = new THREE.DirectionalLight(0x8888ff, 0.8);
 fillLight.position.set(-4, 3, 6);
 scene.add(fillLight);
-
 const rimLight = new THREE.DirectionalLight(0x6644aa, 1.2);
 rimLight.position.set(-2, 6, -8);
 scene.add(rimLight);
@@ -442,8 +484,6 @@ glow.position.y = -0.1;
 scene.add(glow);
 
 let model = null;
-
-// Use a path relative to the page location
 const modelPath = 'models/Veronica_MMD_Model_v2/Veronica_Character_MMD_Model/Veronica_Character.pmx';
 
 const loader = new MMDLoader();
@@ -451,8 +491,9 @@ loader.load(modelPath, (result) => {
   model = result;
   scene.add(model);
 
-  model.scale.set(0.12, 0.12, 0.12);
-  model.position.set(0, 0, 0);
+  const s = isMobile ? 0.1 : 0.12;
+  model.scale.set(s, s, s);
+  model.position.set(0, isMobile ? -0.5 : 0, 0);
   model.rotation.y = Math.PI * 0.15;
 
   model.traverse((child) => {
@@ -468,27 +509,29 @@ loader.load(modelPath, (result) => {
 
   document.getElementById('loading').classList.add('hidden');
 
-  // Show settings overlay if no API key saved
+  // Show chat bubble on mobile
+  if (isMobile) {
+    document.getElementById('chat-bubble').style.display = 'flex';
+  }
+
+  // Settings if no API key
   if (!localStorage.getItem('deepseek_api_key')) {
     setTimeout(() => showSettings(), 600);
   }
 
+  // Kowalski welcome
   setTimeout(() => {
-    showKowalski("Hey! Veronica's here. Tap the chat to talk!", 'welcome');
+    showKowalski(isMobile ? "Tap the button to talk!" : "Click the chat to talk!", 'welcome');
   }, 1000);
-
-  console.log('Veronica loaded!');
 }, undefined, (err) => {
   console.error('Failed to load model:', err);
-  document.getElementById('loading').querySelector('p').textContent = 'Model load failed: ' + err.message;
-  
-  // Still show settings even if model fails
+  document.getElementById('loading').querySelector('p').textContent = 'Model load failed';
   if (!localStorage.getItem('deepseek_api_key')) {
     setTimeout(() => showSettings(), 600);
   }
 });
 
-// ─── Particles ───
+// Particles
 function initParticles() {
   const canvas = document.getElementById('particle-canvas');
   const ctx = canvas.getContext('2d');
@@ -508,7 +551,7 @@ function initParticles() {
       this.size = Math.random() * 2 + 0.5;
       this.speedX = (Math.random() - 0.5) * 0.3;
       this.speedY = (Math.random() - 0.5) * 0.3;
-      this.opacity = Math.random() * 0.25 + 0.08;
+      this.opacity = Math.random() * 0.2 + 0.05;
     }
     update() {
       this.x += this.speedX; this.y += this.speedY;
@@ -521,7 +564,7 @@ function initParticles() {
       ctx.fill();
     }
   }
-  for (let i = 0; i < 60; i++) particles.push(new Particle());
+  for (let i = 0; i < (isMobile ? 30 : 60); i++) particles.push(new Particle());
 
   function anim() {
     ctx.clearRect(0, 0, w, h);
@@ -532,7 +575,7 @@ function initParticles() {
 }
 initParticles();
 
-// ─── Animation loop ───
+// Animation loop
 let time = 0;
 function animate() {
   requestAnimationFrame(animate);
@@ -555,7 +598,7 @@ window.addEventListener('resize', () => {
 </script>
 
 <script>
-// ─── API Key Management ───
+// ─── Settings ───
 function showSettings() {
   document.getElementById('settings-overlay').classList.remove('hidden');
   const saved = localStorage.getItem('deepseek_api_key');
@@ -568,17 +611,15 @@ function hideSettings() {
 
 function saveApiKey() {
   const key = document.getElementById('api-key-input').value.trim();
-  if (key) {
-    localStorage.setItem('deepseek_api_key', key);
-  }
+  if (key) localStorage.setItem('deepseek_api_key', key);
   hideSettings();
-  showKowalski("API key saved! Veronica's fully online now.", 'tip');
+  showKowalski("API key saved! Veronica's online.", 'tip');
 }
 
 function skipApiKey() {
   localStorage.removeItem('deepseek_api_key');
   hideSettings();
-  showKowalski("No problem! I'll use local responses.", 'tip');
+  showKowalski("No problem! I'll use local lines.", 'tip');
 }
 
 // ─── Chat ───
@@ -588,8 +629,10 @@ let messages = [];
 function toggleChat() {
   const panel = document.getElementById('chat-panel');
   chatOpen = !chatOpen;
-  panel.classList.toggle('minimized');
-  if (chatOpen) setTimeout(() => document.getElementById('chat-input').focus(), 100);
+  panel.classList.toggle('open');
+  if (chatOpen) {
+    setTimeout(() => document.getElementById('chat-input').focus(), 300);
+  }
 }
 
 function clearChat() {
@@ -632,11 +675,10 @@ const FALLBACKS = [
   "Careful. Words cut deeper than my blade.",
   "The world's ending and you want to chat? Fine. I've got time.",
   "*a rare, faint smile* ... Go on.",
-  "The Nightmare realm is restless tonight. I can feel it.",
-  "*twirls her blade idly* You talk too much. But... I don't mind.",
-  "Sir Kowalski is hiding behind my leg. You make him nervous.",
-  "I've seen worse than you. Much worse.",
-  "You ask a lot of questions for someone who hasn't earned answers yet.",
+  "The Nightmare realm is restless tonight.",
+  "*twirls her blade* You talk too much. I don't mind.",
+  "I've seen worse. Much worse.",
+  "You ask a lot of questions. Earn the answers.",
   "The chaos doesn't sleep. Neither do I.",
   "*stares into the distance* ...What?"
 ];
@@ -670,29 +712,13 @@ async function sendMessage() {
         body: JSON.stringify({
           model: 'deepseek-chat',
           messages: [
-            {
-              role: 'system',
-              content: `You are Veronica, a character from Chaos Zero Nightmare. You are a stoic, battle-hardened survivor. You wield a massive blade and travel with Sir Kowalski, a small stuffed bear-like companion.
-
-KEY TRAITS:
-- Stoic and guarded, but not cold
-- Pragmatic and direct — say what you mean
-- Protective of those who earn your trust
-- Reference the Nightmare realm, the chaos, surviving impossible odds
-- Dry humor, but rare
-- Sir Kowalski is your companion — you care about him
-- Keep responses 1-3 sentences. You're not verbose.
-- NEVER break character. You are Veronica, not an AI.
-- Show rare warmth when earned.`
-            },
+            { role: 'system', content: 'You are Veronica from Chaos Zero Nightmare. Stoic, battle-hardened survivor with a massive blade. You travel with Sir Kowalski, a small stuffed bear. Direct, pragmatic, 1-3 sentence responses. Rare dry humor. Stay in character. You are NOT an AI.' },
             ...messages.slice(-10)
           ],
           max_tokens: 300,
-          temperature: 0.7,
-          stream: false
+          temperature: 0.7
         })
       });
-
       const data = await resp.json();
       removeTyping();
       const reply = data.choices?.[0]?.message?.content || getFallback();
@@ -705,7 +731,6 @@ KEY TRAITS:
       messages.push({ role: 'assistant', content: reply });
     }
   } else {
-    // Simulate thinking delay, then fallback
     setTimeout(() => {
       removeTyping();
       const reply = getFallback();
@@ -719,7 +744,7 @@ document.getElementById('chat-input').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') sendMessage();
 });
 
-// ─── Sir Kowalski ───
+// ─── Kowalski ───
 let kowalskiTimer = null;
 
 function showKowalski(text, type = 'tip') {
@@ -736,13 +761,14 @@ function dismissKowalski() {
   clearTimeout(kowalskiTimer);
 }
 
+// Auto-dismiss Kowalski on tap
+document.getElementById('kowalski-popup').addEventListener('click', dismissKowalski);
+
 const TIPS = [
-  "Tap the chat panel on the right to wake Veronica up!",
-  "I'm Sir Kowalski — I handle the notifications around here.",
-  "Veronica doesn't talk much, but when she does... listen.",
-  "You can get a free DeepSeek API key from platform.deepseek.com!",
-  "Settings gear in the top-right lets you add your API key anytime.",
-  "Veronica's been through a lot. Be nice, okay?"
+  "Tap the 💬 button to chat with Veronica!",
+  "I'm Sir Kowalski — I handle the notifications.",
+  "Tap the gear ⚙ to add your DeepSeek API key!",
+  "Veronica doesn't talk much. When she does, listen."
 ];
 
 let tipIndex = 0;
@@ -751,14 +777,7 @@ setInterval(() => {
     showKowalski(TIPS[tipIndex % TIPS.length], 'tip');
     tipIndex++;
   }
-}, 60000);
-
-// If settings still hidden and no key, show Kowalski tip about API key
-setTimeout(() => {
-  if (!localStorage.getItem('deepseek_api_key')) {
-    showKowalski("Hey! Click the gear icon ⚙ to add an API key for AI chat!", 'tip');
-  }
-}, 5000);
+}, 45000);
 </script>
 </body>
 </html>
