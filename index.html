@@ -455,24 +455,24 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 0.8;
+renderer.toneMappingExposure = 1.4;
 renderer.outputColorSpace = 'srgb';
 container.appendChild(renderer.domElement);
 
-// Lights
-const ambient = new THREE.AmbientLight(0x444466, 0.6);
+// Lights — MMD models expect warm, soft lighting
+const ambient = new THREE.AmbientLight(0x8888cc, 0.8);
 scene.add(ambient);
-const keyLight = new THREE.DirectionalLight(0xffeecc, 1.8);
-keyLight.position.set(5, 10, 8);
+const keyLight = new THREE.DirectionalLight(0xffffff, 2.0);
+keyLight.position.set(8, 12, 10);
 keyLight.castShadow = true;
 keyLight.shadow.mapSize.width = isMobile ? 512 : 1024;
 keyLight.shadow.mapSize.height = isMobile ? 512 : 1024;
 scene.add(keyLight);
-const fillLight = new THREE.DirectionalLight(0x8888ff, 0.8);
-fillLight.position.set(-4, 3, 6);
+const fillLight = new THREE.DirectionalLight(0xccaaff, 0.6);
+fillLight.position.set(-6, 4, 8);
 scene.add(fillLight);
-const rimLight = new THREE.DirectionalLight(0x6644aa, 1.2);
-rimLight.position.set(-2, 6, -8);
+const rimLight = new THREE.DirectionalLight(0x8866cc, 0.8);
+rimLight.position.set(-3, 5, -10);
 scene.add(rimLight);
 
 const glowGeo = new THREE.PlaneGeometry(12, 12);
@@ -501,23 +501,14 @@ loader.load(modelPath, (result) => {
     if (child.isMesh) {
       child.castShadow = true;
       child.receiveShadow = true;
+      // MMDLoader creates materials with MMD's native settings — preserve them
       if (child.material) {
         const mats = Array.isArray(child.material) ? child.material : [child.material];
         mats.forEach(m => {
-          // Preserve MMD's original texture colors — don't override them
-          // Standard MMD look: slightly glossy, not metallic
-          m.roughness = 0.3;
-          m.metalness = 0.0;
-          // MMD models use vertex colors and toon shading — keep original colors
-          m.color.multiplyScalar(1.0);
-          // Ensure textures render with proper gamma/sRGB
+          // Only set sRGB color space on textures if they exist
+          // Don't override MMD's native roughness/metalness/color
           if (m.map) {
             m.map.colorSpace = 'srgb';
-            m.map.anisotropy = renderer.capabilities.getMaxAnisotropy();
-          }
-          // Ambient occlusion support from MMD
-          if (m.aoMap) {
-            m.aoMap.colorSpace = 'srgb';
           }
         });
       }
